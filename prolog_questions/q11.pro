@@ -1,13 +1,13 @@
 /*
 
-(*) Run-length encoding of a list.
-Use the result of problem P09 to implement the so-called run-length encoding 
-data compression method. Consecutive duplicates of elements are encoded as 
-terms [N,E] where N is the number of duplicates of the element E.
+(*) Modified run-length encoding.
+Modify the result of problem P10 in such a way that if an element has no 
+duplicates it is simply copied into the result list. Only elements with 
+duplicates are transferred as [N,E] terms.
 
 Example:
-?- encode([a,a,a,a,b,c,c,a,a,d,e,e,e,e],X).
-X = [[4,a],[1,b],[2,c],[2,a],[1,d][4,e]]
+?- encode_modified([a,a,a,a,b,c,c,a,a,d,e,e,e,e],X).
+X = [[4,a],b,[2,c],[2,a],d,[4,e]]
 
 */
 
@@ -19,8 +19,11 @@ encode([], E, E).
 
 encode([H|T], Temp, E) :-
     len(H, L),
-    first_elem(H, C),
-    append([[L, C]], Temp, NewTemp),
+    (L =:= 1 ->
+        append(H, Temp, NewTemp);
+        first_elem(H, C),
+        append([[L, C]], Temp, NewTemp)
+    ),
     encode(T, NewTemp, E).
 
 pack(L, X) :- pack(L, [], [], X).
