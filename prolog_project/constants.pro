@@ -10,7 +10,7 @@
 current_key(1000).
 frame_per_second(10).
 sleep_period(Y) :- frame_per_second(X), Y is 1/X.
-max_depth_limit(30).
+max_depth_limit(50).
 
 % for printing
 object_props(food, 'O', yellow).

@@ -252,7 +252,7 @@ print_state_helper(State, [X, Y]) :-
 is_terminal(State) :-
     State = [AgentDict, _, T],
     (
-        (T > 1000);
+        (T > 100);
         (
             get_dict(hunger, AgentDict, Hunger),
             Hunger < 0
@@ -276,7 +276,7 @@ fill_map([[X,Y,Type]|L],[A,S],[An,Sn],Id):-
     fill_map(L,[A,Sn_],[An,Sn],Id_),!.
 
 read_file(Objects,[X,Y]):-
-    open('map.txt', read, File),
+    open('map_test.txt', read, File),
     read_lines(File, Objects, -1,[X,Y]),
     close(File).
 
@@ -325,6 +325,7 @@ execute_print_actions(InitialState, [Action], FinalState) :-
     print_state(FinalState), !.
 /********************/
 execute_print_actions(InitialState, [Action|TailActions], FinalState) :-
+    \+is_terminal(InitialState), %addition
     call(Action, InitialState, TempState),
     write('Action: '), write(Action), nl,
     print_state(TempState),
