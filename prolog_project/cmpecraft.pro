@@ -252,7 +252,7 @@ print_state_helper(State, [X, Y]) :-
 is_terminal(State) :-
     State = [AgentDict, _, T],
     (
-        (T > 100);
+        (T > 1000);
         (
             get_dict(hunger, AgentDict, Hunger),
             Hunger < 0

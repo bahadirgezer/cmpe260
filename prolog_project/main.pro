@@ -521,18 +521,182 @@ gather_pickaxe(State, ActionList) :-
         !, fail).
 */
 
+/*
+
+.   S   .   T   @
+S   .   S   .   S
+.   .   .   T   . 
+
+*/
 collect_requirements(State, ItemType, ActionList) :-
     (ItemType = stick ->
         gather_stick(State, ActionList);
         ItemType = stone_pickaxe ->
         gather_pickaxe(State, [], ActionList);
         ItemType = stone_axe ->
-        gather_axe(State, ActionList)).
+        gather_pickaxe(State, ActionList)).
 
 % 5 points
 % find_castle_location(+State, -XMin, -YMin, -XMax, -YMax) :- .
+% occupied(State, X, Y) :-
+%     State = [_, Objects, _],
+%     get_dict(_, Objects, Object),
+%     get_dict(x, Object, Ox),
+%     get_dict(y, Object, Oy),
+%     X =:= Ox, Y =:= Oy.
 
-find_castle_location(State, XMin, YMin, XMax, YMax).
+
+
+
+% print_restrictions :-
+%     forall(between(0, 5, X), write(X)), nl.
+
+% search(State, XBoundary, YBoundary, Ix, Iy, X, Y) :-
+%     Ix1 is Ix + 1, Iy1 is Iy + 1,
+%     Ix2 is Ix - 1, Iy2 is Iy - 1,
+%     Ix1 < XBoundary,
+
+%     (
+%         occupied(State, Ix2, Iy2);
+%         occupied(State, Ix2, Iy );
+%         occupied(State, Ix2, Iy1);
+%         occupied(State, Ix,  Iy2);
+%         occupied(State, Ix,  Iy );
+%         occupied(State, Ix,  Iy1);
+%         occupied(State, Ix1, Iy2);
+%         occupied(State, Ix1, Iy );
+%         occupied(State, Ix1, Iy1);
+
+%     ),
+%     Ix < XBoundary,
+%     NewIx is Ix + 1,
+%     search(State, XBoundary, YBoundary, NewIx, Iy, X, Y).
+
+% is_ok(Xm, Ym, Xm, Ym) :-
+%     Xm =:= 2, Ym =:= 2, !.
+
+% add_ok(ListX, ListY, Xcurr, Ycurr, NewListX, NewListY) :-
+%     is_ok(Xcurr, Ycurr, X, Y),
+%     append(ListX, [X], NewListX),
+%     append(ListY, [Y], NewListY).
+
+occupied(State, X, Y) :-
+    State = [_, Objects, _],
+    get_dict(_, Objects, Object),
+    get_dict(x, Object, X),
+    get_dict(y, Object, Y).
+
+check_x_y(State, ListX, ListY, X, Y) :-
+    member(X, ListX), member(Y, ListY),
+    check_others(State, X, Y), !. %cut makes the predicate find just one point
+
+check_others(State, X, Y) :-
+    Xl is X - 1, Xr is X + 1,
+    Yu is Y - 1, Yd is Y + 1, 
+    (
+        occupied(State, Xl, Yu), !, fail;
+        occupied(State, Xl, Y), !, fail;
+        occupied(State, Xl, Yd), !, fail;
+        occupied(State, X, Yu), !, fail;
+        occupied(State, X, Y), !, fail;
+        occupied(State, X, Yd), !, fail;
+        occupied(State, Xr, Yu), !, fail;
+        occupied(State, Xr, Y), !, fail;
+        occupied(State, Xr, Yd), !, fail;
+        !
+    ).
+
+valid(State, Points) :-
+    width(W), height(H),
+    Rw is W - 3, Rh is H - 3,
+    bagof(X, between(2, Rw, X), ListX),
+    bagof(Y, between(2, Rh, Y), ListY),
+    bagof([X, Y], check_x_y(State, ListX, ListY, X, Y), Points).
+
+find_castle_location(State, XMin, YMin, XMax, YMax) :-
+    valid(State, Points),
+    Points = [[X,Y]],
+    XMin is X - 1, XMax is X + 1,
+    YMin is Y - 1, YMax is Y + 1.
+
+%     width(W), height(H),
+%     Xtemp = [], Ytemp = [],
+%     Rw is W - 3, Rh is H - 3,
+%     forany(between(2, Rw, Xm), 
+%         forany(between(2, Rh, Ym), 
+%             is_ok(Xm, Ym, X
+% search(Points) :-
+%     bagof(Point, bagof(), Points).
+
+% rest(X, X) :-
+%     width(W),
+%     Rw is W - 3,
+%     between(2, Rw, X).
+
+% check_x([X, Y]) :-
+%     width(W), Rw is W - 3,
+%     between(2, Rw, X),
+%     bagof(Y, check_xy(X, Y), 
+
+% search(X) :-
+%     bagof(Point, check_x(Point), Points).
+
+% search(X, Y) :-, Y),
+%         )
+%     ), format('~w, ~w', [X, Y]).
 
 % 15 points
 % make_castle(+State, -ActionList) :- .
+
+make_castle(State, ActionList) :-
+    collect_castle_requirements(State, [], A1),
+    execute_actions(State, A1, NewState),
+    find_castle_location(NewState, XMin, YMin, XMax, YMax),
+    X is (XMin + XMax) // 2,
+    Y is (YMin + YMax) // 2,
+    build_castle(NewState, X, Y, A1, ActionList).
+
+
+build_castle(State, X, Y, Actions, ActionList) :-
+    State = [Agent, _, _],
+    manhattan_distance([X, Y], [Agent.x, Agent.y], Distance),
+    navigate_to(State, X, Y, A1, Distance),
+    A2 = ['place_ne', 'place_n', 'place_nw', 'place_w', 'place_sw', 
+    'place_s', 'place_se', 'place_e', 'place_c'],
+    append(A1, A2, A3),
+    %execute_actions(State, A3, NewState),
+    append(Actions, A3, ActionList), !.
+
+collect_stone_castle(State, Object, Actions, ActionList) :-
+    State = [Agent, _, _],
+    manhattan_distance([Object.x, Object.y], [Agent.x, Agent.y], Distance),
+    navigate_to(State, Object.x, Object.y, A1, Distance),
+    mine_stone(A1, A2),
+    execute_actions(State, A2, NewState),
+    append(Actions, A2, NewActions),
+    collect_castle_requirements(NewState, NewActions, ActionList), !.
+
+collect_cobblestone_castle(State, Object, Actions, ActionList) :-
+    State = [Agent, _, _],
+    manhattan_distance([Object.x, Object.y], [Agent.x, Agent.y], Distance),
+    navigate_to(State, Object.x, Object.y, A1, Distance),
+    mine_cobblestone(A1, A2),
+    execute_actions(State, A2, NewState),
+    append(Actions, A2, NewActions),
+    collect_castle_requirements(NewState, NewActions, ActionList), !.
+
+collect_castle_requirements(State, Actions, Actions) :-
+    State = [Agent, _, _],
+    Inv = Agent.inventory,
+    has(cobblestone, 9, Inv), !.
+
+collect_castle_requirements(State, Actions, ActionList) :-
+    State = [Agent, _, _],
+    Inv = Agent.inventory,
+    \+has(cobblestone, 9, Inv),
+    (find_nearest_type(State, stone, _, Object, _),
+    collect_stone_castle(State, Object, Actions, ActionList), !;
+    find_nearest_type(State, cobblestone, _, Object, _), 
+    collect_cobblestone_castle(State, Object, Actions, ActionList), !), !.
+
+collect_castle_requirements(_, _, []).
