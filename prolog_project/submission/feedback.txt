@@ -1,0 +1,2 @@
+predicates 3.9 and 3.10 could've been explained with greater detail. There could be a lot of different implementations and that's generates too much ambiguity. 
+Other than that it think it was an enjoyable project to work on.

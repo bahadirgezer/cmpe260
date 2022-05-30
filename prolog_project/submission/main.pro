@@ -1,14 +1,9 @@
-% name surname
-% studentid
-% compiling: no
-% complete: no
+% bahadir gezer
+% 2020400039
+% compiling: yes
+% complete: yes
 :- ['cmpecraft.pro'].
-
 :- init_from_map.
-
-
-t.
-f.
 
 % 10 points
 % manhattan_distance(+A, +B, -Distance) :- .
@@ -35,6 +30,7 @@ minimum_of_list(List, Minimum) :-
 % 10 points
 % find_nearest_type(+State, +ObjectType, -ObjKey, -Object, -Distance) :- .
 
+%checks if Var is instantiated or not
 not_inst(Var):-
     \+(\+(Var=0)),
     \+(\+(Var=1)).
@@ -46,7 +42,7 @@ object_type(ObjectType, Object) :-
 get_nearest(_, _, [], _, K, O, L, K, O, L) :-
     (not_inst(O) -> !, fail; !).
 
-
+%get nearest for a single type of object
 get_nearest(Agent, Objects, ObjKeys, Type, K, O, L, ObjKey, Object, Distance) :-
     ObjKeys = [NewKey|NewObjectKeys],
     get_dict(NewKey, Objects, NewObject),
@@ -61,7 +57,8 @@ get_nearest(Agent, Objects, ObjKeys, Type, K, O, L, ObjKey, Object, Distance) :-
         \+object_type(Type, NewObject),
         get_nearest(Agent, Objects, NewObjectKeys, Type, K, O, L, ObjKey, Object, Distance), !
     ).
-    
+
+%cover function for get nearest
 find_nearest_type(State, ObjectType, ObjKey, Object, Distance) :-
     State = [Agent, Objects, _],
     dict_keys(Objects, ObjKeys),
@@ -80,6 +77,7 @@ add_action(Action, Count, CurrentActions, NewActions) :-
     NewCount is Count - 1,
     add_action(Action, NewCount, NewCurrentActions, NewActions).
 
+%no search is done, just adds back to back up or down or left or right actions.
 navigate_to(State, X, Y, ActionList, DepthLimit) :-
     State = [Agent, _, _],
     manhattan_distance([Agent.x, Agent.y], [X, Y], Distance),
@@ -94,20 +92,12 @@ navigate_to(State, X, Y, ActionList, DepthLimit) :-
             add_action('go_left', Times1, FirstActionList, ActionList);
             Times1 is X - Agent.x,
             add_action('go_right', Times1, FirstActionList, ActionList))
-            ).
-/*
-      1  2  3  4  5  6 
-    1
-    2
-    3
-    4
-    5
-    6
-*/
+            ), !.
 
 % 10 points
 % chop_nearest_tree(+State, -ActionList) :- .
 
+%basically useless predicate, it's the same with mine_stone.
 chop_tree(FirstActionList, ActionList) :-
     append(FirstActionList, 
         ['left_click_c', 'left_click_c', 'left_click_c', 'left_click_c'], 
@@ -120,8 +110,6 @@ chop_nearest_tree(State, ActionList) :-
     manhattan_distance([Agent.x, Agent.y], [Object.x, Object.y], Distance),
     navigate_to(State, Object.x, Object.y, FirstActionList, Distance),
     chop_tree(FirstActionList, ActionList)).
-
-
 
 % 10 points
 % mine_nearest_stone(+State, -ActionList) :- .
@@ -165,6 +153,7 @@ mine_cobblestone(FirstActionList, ActionList) :-
         ['left_click_c', 'left_click_c', 'left_click_c', 'left_click_c'], 
         ActionList).
 
+%added the same mine predicate for cobblestone objects
 mine_nearest_cobblestone(State, ActionList) :-
     (\+find_nearest_type(State, cobblestone, _, _, _), !, fail;
     find_nearest_type(State, cobblestone, _, Object, _),
@@ -173,7 +162,7 @@ mine_nearest_cobblestone(State, ActionList) :-
     navigate_to(State, Object.x, Object.y, FirstActionList, Distance),
     mine_cobblestone(FirstActionList, ActionList)).
 
-
+%if the agent doesn't have two logs in ints inventory, then it tries to collect the nearest tree.
 gather_stick(State, ActionList) :-
     State = [Agent, _, _],
     Inv = Agent.inventory,
@@ -186,6 +175,7 @@ gather_stick(State, ActionList) :-
 find_nearest_object(_, _, [], O, _, O) :-
     (not_inst(O) -> !, fail; !).
 
+%finds the nearest non-food type object.
 find_nearest_object(Agent, Objects, Keys, CurrentObject, CurrentDistance, Object) :-
     Keys = [Key|NewKeys],
     get_dict(Key, Objects, NewCurrentObject),
@@ -206,67 +196,7 @@ find_nearest(State, Object) :- %can fail.
     Size is 2 * (W + H),
     find_nearest_object(Agent, Objects, Keys, _, Size, Object), !.
 
-/*
-gather_pickaxe(State, Actions, ActionList) :-
-    State = [Agent, _, _],
-    Inv = Agent.inventory,
-    has(log, 3, Inv), 
-    has(stick, 2, Inv),
-    has(cobblestone, 3, Inv),
-    ActionList = Actions, !.
-
-gather_pickaxe(State, Actions, ActionList) :-
-    State = [Agent, _, _],
-    Inv = Agent.inventory,
-    find_nearest(State, Object),
-    Object.type = stone, 
-    \+has(cobblestone, 3, Inv), 
-    manhattan_distance([Object.x, Object.y], [Agent.x, Agent.y], Distance),
-    navigate_to(State, Object.x, Object.y, Actions1, Distance),
-    mine_stone(Actions1, Actions2),
-    execute_print_actions(State, Actions2, State2),
-    append(Actions, Actions2, Actions3),
-    gather_pickaxe(State2, Actions3, ActionList), !.
-
-
-gather_pickaxe(State, Actions, ActionList) :-
-    State = [Agent, _, _],
-    Inv = Agent.inventory,
-    find_nearest(State, Object),
-    Object.type = cobblestone,
-    \+has(cobblestone, 3, Inv), 
-    manhattan_distance([Object.x, Object.y], [Agent.x, Agent.y], Distance),
-    navigate_to(State, Object.x, Object.y, Actions1, Distance),
-    mine_cobblestone(Actions1, Actions2),
-    execute_print_actions(State, Actions2, State2),
-    append(Actions, Actions2, Actions3),
-    gather_pickaxe(State2, Actions3, ActionList), !.
-
-gather_pickaxe(State, Actions, ActionList) :-
-    State = [Agent, _, _],
-    Inv = Agent.inventory,
-    \+has(stick, 2, Inv),
-    has(log, 2, Inv),
-    Actions1 = ['craft_stick'],
-    execute_print_actions(State, Actions1, State2),
-    append(Actions, Actions1, Actions2),
-    gather_pickaxe(State2, Actions2, ActionList), !.
-
-gather_pickaxe(State, Actions, ActionList) :-
-    State = [Agent, _, _],
-    Inv = Agent.inventory,
-    find_nearest(State, Object),
-    Object.type = tree,
-    \+has(stick, 2, Inv),
-    \+has(log, 3, Inv),
-    manhattan_distance([Object.x, Object.y], [Agent.x, Agent.y], Distance),
-    navigate_to(State, Object.x, Object.y, Actions1, Distance),
-    chop_tree(Actions1, Actions2),
-    execute_print_actions(State, Actions2, State2),
-    append(Actions, Actions2, Actions3),
-    gather_pickaxe(State2, Actions3, ActionList), !.
-*/
-
+%collects a tree, used in gather_pickaxe. It's tidier this way.
 collect_tree(State, Object, Actions, ActionList) :-
     State = [Agent, _, _],
     manhattan_distance([Object.x, Object.y], [Agent.x, Agent.y], Distance),
@@ -294,7 +224,7 @@ collect_cobblestone(State, Object, Actions, ActionList) :-
     append(Actions, A2, NewActions),
     gather_pickaxe(NewState, NewActions, ActionList), !.
 
-
+%ending predicate
 gather_pickaxe(State, Actions, Actions) :-
     State = [Agent, _, _],
     Inv = Agent.inventory,
@@ -302,6 +232,7 @@ gather_pickaxe(State, Actions, Actions) :-
     has(log, 2, Inv),
     has(cobblestone, 3, Inv), !.
 
+%if there isn't enough sticks but has enough logs to craft sticks. It crafts sticks.
 gather_pickaxe(State, Actions, ActionList) :-
     State = [Agent, _, _],
     Inv = Agent.inventory,
@@ -312,6 +243,7 @@ gather_pickaxe(State, Actions, ActionList) :-
     append(Actions, A, NewActions),
     gather_pickaxe(NewState, NewActions, ActionList), !.
 
+%if there isn't enough cobblestone. checks for both stone and cobblestone to mine.
 gather_pickaxe(State, Actions, ActionList) :-
     State = [Agent, _, _],
     Inv = Agent.inventory,
@@ -321,13 +253,7 @@ gather_pickaxe(State, Actions, ActionList) :-
     find_nearest_type(State, cobblestone, _, Object, _), 
     collect_cobblestone(State, Object, Actions, ActionList), !), !.
 
-% gather_pickaxe(State, Actions, ActionList) :-
-%     State = [Agent, _, _],
-%     Inv = Agent.inventory,
-%     \+has(cobblestone, 3, Inv),
-%     find_nearest_type(State, cobblestone, _, Object, _),
-%     collect_cobblestone(State, Object, Actions, ActionList), !.
-
+%If there isn't enough sticks. Collects the nearest tree.
 gather_pickaxe(State, Actions, ActionList) :-
     State = [Agent, _, _],
     Inv = Agent.inventory,
@@ -335,6 +261,7 @@ gather_pickaxe(State, Actions, ActionList) :-
     find_nearest_type(State, tree, _, Object, _),
     collect_tree(State, Object, Actions, ActionList), !.
 
+%If there isn't enough logs. Collects the nearest tree.
 gather_pickaxe(State, Actions, ActionList) :-
     State = [Agent, _, _],
     Inv = Agent.inventory,
@@ -344,7 +271,7 @@ gather_pickaxe(State, Actions, ActionList) :-
 
 gather_pickaxe(_, _, []).
 
-
+%fails if it cannot bind to any of the predicates above.
 check_failure_pickaxe(State) :-
     State = [Agent, _, _],
     Inv = Agent.inventory,
@@ -353,181 +280,7 @@ check_failure_pickaxe(State) :-
     \+has(cobblestone, 3, Inv),
     \+has(tree, 3, Inv), !.
 
-/*
-gather_pickaxe(State, Actions, ActionList) :-
-    State = [Agent, _, _],
-    Inv = Agent.inventory,
-    find_nearest(State, Object),
-    (Object.type = tree, 
-        \+has(stick, 2, Inv),
-        collect_tree(State, Object, Actions, ActionList), !;
-        Object.type = tree, 
-        \+has(log, 3, Inv),
-        collect_tree(State, Object, Actions, ActionList), !;
-        Object.type = stone,
-        \+has(cobblestone, 3, Inv),
-        collect_stone(State, Object, Actions, ActionList), !;
-        Object.type = cobblestone,
-        \+has(cobblestone, 3, Inv),
-        collect_cobblestone(State, Object, Actions, ActionList), !).
-*/
-/*
-gather_pickaxe(State, Actions, ActionList) :-
-    State = [Agent, _, _],
-    Inv = Agent.inventory,
-    find_nearest(State, Object),
-    (Object.type = stone, 
-        \+has(cobblestone, 3, Inv), 
-        manhattan_distance([Object.x, Object.y], [Agent.x, Agent.y], Distance),
-        navigate_to(State, Object.x, Object.y, Actions1, Distance),
-        mine_stone(Actions1, Actions2),
-        execute_print_actions(State, Actions2, State2),
-        append(Actions, Actions2, Actions3),
-        gather_pickaxe(State2, Actions3, ActionList), !;
-        Object.type = cobblestone,
-        \+has(cobblestone, 3, Inv), 
-        manhattan_distance([Object.x, Object.y], [Agent.x, Agent.y], Distance),
-        navigate_to(State, Object.x, Object.y, Actions1, Distance),
-        mine_cobblestone(Actions1, Actions2),
-        execute_print_actions(State, Actions2, State2),
-        append(Actions, Actions2, Actions3),
-        gather_pickaxe(State2, Actions3, ActionList), !;
-        Object.type = tree, 
-        (
-            \+has(stick, 2, Inv),
-            \+has(log, 2, Inv),
-            manhattan_distance([Object.x, Object.y], [Agent.x, Agent.y], Distance),
-            navigate_to(State, Object.x, Object.y, Actions1, Distance),
-            chop_tree(Actions1, Actions2),
-            execute_print_actions(State, Actions2, State2),
-            append(Actions, Actions2, Actions3),
-            gather_pickaxe(State2, Actions3, ActionList), !;
-            has(stick, 2, Inv),
-            \+has(log, 3, Inv), 
-            manhattan_distance([Object.x, Object.y], [Agent.x, Agent.y], Distance),
-            navigate_to(State, Object.x, Object.y, Actions1, Distance),
-            chop_tree(Actions1, Actions2),
-            execute_print_actions(State, Actions2, State2),
-            append(Actions, Actions2, Actions3),
-            gather_pickaxe(State2, Actions3, ActionList), !)
-        ), !.
-
-*/
-
-/*
-gather_pickaxe(State, ActionList) :-
-    State = [Agent, _, _],
-    Inv = Agent.inventory,
-    has(log, 3, Inv), 
-    has(stick, 2, Inv),
-    has(cobblestone, 3, Inv), ActionList = [], !.
-
-
-gather_pickaxe(State, ActionList) :-
-    State = [Agent, _, _],
-    Inv = Agent.inventory,
-    \+has(cobblestone, 3, Inv),
-    write('Mining stone'), nl,
-    mine_nearest_stone(State, FirstActionList),
-    execute_print_actions(State, FirstActionList, State2),
-    gather_pickaxe(State2, SecondActionList),
-    append(FirstActionList, SecondActionList, ActionList), !.
-
-gather_pickaxe(State, ActionList) :-
-    State = [Agent, _, _],
-    Inv = Agent.inventory,
-    \+has(cobblestone, 3, Inv),
-    write('Mining cobblestone'), nl,
-    mine_nearest_cobblestone(State, FirstActionList),
-    execute_print_actions(State, FirstActionList, State2),
-    gather_pickaxe(State2, SecondActionList),
-    append(FirstActionList, SecondActionList, ActionList), !.
-
-gather_pickaxe(State, ActionList) :-
-    State = [Agent, _, _],
-    Inv = Agent.inventory,
-    \+has(stick, 2, Inv),
-    \+has(log, 2, Inv),
-    write('Chopping tree for stick'), nl,
-    chop_nearest_tree(State, FirstActionList),
-    execute_print_actions(State, FirstActionList, State2),
-    gather_pickaxe(State2, SecondActionList),
-    append(FirstActionList, SecondActionList, ActionList), !.
-
-gather_pickaxe(State, ActionList) :-
-    State = [Agent, _, _],
-    Inv = Agent.inventory,
-    \+has(stick, 2, Inv),
-    has(log, 2, Inv),
-    FirstActionList = ['craft_stick'],
-    write('Crafting stick'), nl,
-    execute_print_actions(State, FirstActionList, State2),
-    gather_pickaxe(State2, SecondActionList),
-    append(FirstActionList, SecondActionList, ActionList), !.
-
-gather_pickaxe(State, ActionList) :-
-    State = [Agent, _, _],
-    Inv = Agent.inventory,
-    \+has(log, 3, Inv),
-    write('Chopping tree for log'), nl,
-    chop_nearest_tree(State, FirstActionList),
-    execute_print_actions(State, FirstActionList, State2),
-    gather_pickaxe(State2, SecondActionList),
-    append(FirstActionList, SecondActionList, ActionList), !.
-
-gather_pickaxe(_, ActionList) :- ActionList = [], !, fail.
-
-*/
-
-/*
-gather_pickaxe(State, ActionList) :-
-    State = [Agent, _, _],
-    Inv = Agent.inventory,
-    (has(log, 3, Inv), 
-        has(stick, 2, Inv),
-        has(cobblestone, 3, Inv), !;
-        \+has(cobblestone, 3, Inv),
-        write('Mining stone'), nl,
-        mine_nearest_stone(State, FirstActionList),
-        execute_print_actions(State, FirstActionList, State2),
-        gather_pickaxe(State2, SecondActionList),
-        append(FirstActionList, SecondActionList, ActionList), !;
-        \+has(cobblestone, 3, Inv),
-        write('Mining cobblestone'), nl,
-        mine_nearest_cobblestone(State, FirstActionList),
-        execute_print_actions(State, FirstActionList, State2),
-        gather_pickaxe(State2, SecondActionList),
-        append(FirstActionList, SecondActionList, ActionList), !;
-        \+has(stick, 2, Inv),
-        \+has(log, 2, Inv),
-        write('Chopping tree for stick'), nl,
-        chop_nearest_tree(State, FirstActionList),
-        execute_print_actions(State, FirstActionList, State2),
-        gather_pickaxe(State2, SecondActionList),
-        append(FirstActionList, SecondActionList, ActionList), !;
-        \+has(stick, 2, Inv),
-        has(log, 2, Inv),
-        FirstActionList = ['craft_stick'],
-        write('Crafting stick'), nl,
-        execute_print_actions(State, FirstActionList, State2),
-        gather_pickaxe(State2, SecondActionList),
-        append(FirstActionList, SecondActionList, ActionList), !;
-        \+has(log, 3, Inv),
-        write('Chopping tree for log'), nl,
-        chop_nearest_tree(State, FirstActionList),
-        execute_print_actions(State, FirstActionList, State2),
-        gather_pickaxe(State2, SecondActionList),
-        append(FirstActionList, SecondActionList, ActionList), !;
-        !, fail).
-*/
-
-/*
-
-.   S   .   T   @
-S   .   S   .   S
-.   .   .   T   . 
-
-*/
+%cover predicate
 collect_requirements(State, ItemType, ActionList) :-
     (ItemType = stick ->
         gather_stick(State, ActionList);
@@ -538,58 +291,20 @@ collect_requirements(State, ItemType, ActionList) :-
 
 % 5 points
 % find_castle_location(+State, -XMin, -YMin, -XMax, -YMax) :- .
-% occupied(State, X, Y) :-
-%     State = [_, Objects, _],
-%     get_dict(_, Objects, Object),
-%     get_dict(x, Object, Ox),
-%     get_dict(y, Object, Oy),
-%     X =:= Ox, Y =:= Oy.
 
-
-
-
-% print_restrictions :-
-%     forall(between(0, 5, X), write(X)), nl.
-
-% search(State, XBoundary, YBoundary, Ix, Iy, X, Y) :-
-%     Ix1 is Ix + 1, Iy1 is Iy + 1,
-%     Ix2 is Ix - 1, Iy2 is Iy - 1,
-%     Ix1 < XBoundary,
-
-%     (
-%         occupied(State, Ix2, Iy2);
-%         occupied(State, Ix2, Iy );
-%         occupied(State, Ix2, Iy1);
-%         occupied(State, Ix,  Iy2);
-%         occupied(State, Ix,  Iy );
-%         occupied(State, Ix,  Iy1);
-%         occupied(State, Ix1, Iy2);
-%         occupied(State, Ix1, Iy );
-%         occupied(State, Ix1, Iy1);
-
-%     ),
-%     Ix < XBoundary,
-%     NewIx is Ix + 1,
-%     search(State, XBoundary, YBoundary, NewIx, Iy, X, Y).
-
-% is_ok(Xm, Ym, Xm, Ym) :-
-%     Xm =:= 2, Ym =:= 2, !.
-
-% add_ok(ListX, ListY, Xcurr, Ycurr, NewListX, NewListY) :-
-%     is_ok(Xcurr, Ycurr, X, Y),
-%     append(ListX, [X], NewListX),
-%     append(ListY, [Y], NewListY).
-
+%checks whether X, Y is occupied by an object
 occupied(State, X, Y) :-
     State = [_, Objects, _],
     get_dict(_, Objects, Object),
     get_dict(x, Object, X),
     get_dict(y, Object, Y).
 
+%finds X, Y in ListX, ListY such that X, Y is a suitable position for the center of a castle.
 check_x_y(State, ListX, ListY, X, Y) :-
     member(X, ListX), member(Y, ListY),
     check_others(State, X, Y), !. %cut makes the predicate find just one point
 
+%used for free space detection.
 check_others(State, X, Y) :-
     Xl is X - 1, Xr is X + 1,
     Yu is Y - 1, Yd is Y + 1, 
@@ -606,6 +321,7 @@ check_others(State, X, Y) :-
         !
     ).
 
+%gets a single valid X, Y Point.
 valid(State, Points) :-
     width(W), height(H),
     Rw is W - 3, Rh is H - 3,
@@ -613,41 +329,19 @@ valid(State, Points) :-
     bagof(Y, between(2, Rh, Y), ListY),
     bagof([X, Y], check_x_y(State, ListX, ListY, X, Y), Points).
 
+%cover predicate
 find_castle_location(State, XMin, YMin, XMax, YMax) :-
     valid(State, Points),
     Points = [[X,Y]],
     XMin is X - 1, XMax is X + 1,
     YMin is Y - 1, YMax is Y + 1.
 
-%     width(W), height(H),
-%     Xtemp = [], Ytemp = [],
-%     Rw is W - 3, Rh is H - 3,
-%     forany(between(2, Rw, Xm), 
-%         forany(between(2, Rh, Ym), 
-%             is_ok(Xm, Ym, X
-% search(Points) :-
-%     bagof(Point, bagof(), Points).
-
-% rest(X, X) :-
-%     width(W),
-%     Rw is W - 3,
-%     between(2, Rw, X).
-
-% check_x([X, Y]) :-
-%     width(W), Rw is W - 3,
-%     between(2, Rw, X),
-%     bagof(Y, check_xy(X, Y), 
-
-% search(X) :-
-%     bagof(Point, check_x(Point), Points).
-
-% search(X, Y) :-, Y),
-%         )
-%     ), format('~w, ~w', [X, Y]).
-
-% 15 points
-% make_castle(+State, -ActionList) :- .
-
+% didn't want to use empty list since it fails when used with cmpecraft, 
+% added one left_click in case the actionlist is empty.
+% first collects the requirements, then checks if there is a suitable location for the castle.
+% if there is, it builds the castle.
+% This way there can be situations where the castle is built in a place which was previously
+% occupied by another object. 
 make_castle(State, ActionList) :-
     collect_castle_requirements(State, ['left_click_c'], A1),
     execute_actions(State, A1, NewState),
@@ -656,7 +350,7 @@ make_castle(State, ActionList) :-
     Y is (YMin + YMax) // 2,
     build_castle(NewState, X, Y, A1, ActionList).
 
-
+% builds the castle.
 build_castle(State, X, Y, Actions, ActionList) :-
     State = [Agent, _, _],
     manhattan_distance([X, Y], [Agent.x, Agent.y], Distance),
@@ -664,9 +358,9 @@ build_castle(State, X, Y, Actions, ActionList) :-
     A2 = ['place_ne', 'place_n', 'place_nw', 'place_w', 'place_sw', 
     'place_s', 'place_se', 'place_e', 'place_c'],
     append(A1, A2, A3),
-    %execute_actions(State, A3, NewState),
     append(Actions, A3, ActionList), !.
 
+%collect stone method for castle. Basically the same one above.
 collect_stone_castle(State, Object, Actions, ActionList) :-
     State = [Agent, _, _],
     manhattan_distance([Object.x, Object.y], [Agent.x, Agent.y], Distance),
@@ -701,6 +395,9 @@ collect_castle_requirements(State, Actions, ActionList) :-
 
 collect_castle_requirements(_, _, []).
 
+%extra predicates for fun.
+
+% extra predicate for fun. Builds castles until it cannot build anymore.
 make_castles(State, FinalState) :-
     make_castle(State, ActionList),
     execute_print_actions(State, ActionList, NewState), 
@@ -708,6 +405,7 @@ make_castles(State, FinalState) :-
 
 make_castles(State, State) :- !.
 
+%collects every item on the map. Fun predicate.
 collect_every_item(State, FinalState) :-
     State = [Agent, _, _],
     find_nearest_all(State, Object),

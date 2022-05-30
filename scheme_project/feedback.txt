@@ -1,0 +1,14 @@
+parsing expressions was fun, now it's ruined.
+
+Jokes aside I did struggle a lot with this project.
+Racket being a functional language really tripped me 
+up. 
+
+There could've been a eval_sequence.py to evaluate the 
+generated sequence. Just generation doesn't help very 
+much.
+
+Lastly, I hope we have time to object to our first and 
+second midterm grades. We still don't know our grades 
+and the semester is almost over.
+
