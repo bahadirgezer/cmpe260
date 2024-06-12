@@ -3,7 +3,9 @@
 ## Course Information
 
 **Instructor:** Başak Aydemir
+
 **Term:** Spring 22
+
 
 This course is designed to introduce the main paradigms of computation and the languages that represent these paradigms. We'll explore various programming language constructs, syntax and semantics, and basic programming paradigms, including functional and logic programming. The course does not focus on teaching a specific language but uses multiple languages to illustrate key concepts.
 
